@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Планировщик 2026–2027",
   description: "Личная CRM: цели, канбан, помодоро, ежедневник",
   manifest: "/manifest.json",
-  icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
+  icons: { icon: "/icons/icon.svg", apple: "/icons/icon.svg" },
 };
 
 export const viewport: Viewport = {
