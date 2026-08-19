@@ -14,7 +14,7 @@ const NAV = [
   { href: "/stats", label: "📊 Статистика" },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const [today, setToday] = useState("");
   const [pushState, setPushState] = useState<"idle" | "on" | "unsupported">("idle");
@@ -38,17 +38,18 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-44 shrink-0 bg-sidebar flex flex-col h-screen sticky top-0">
+    <div className="flex flex-col h-full bg-sidebar">
       <div className="px-4 pt-5 pb-4">
         <div className="text-sm font-bold text-blue-400">📋 Планировщик</div>
         <div className="text-[10px] text-slate-500 mt-1">май 2026 → май 2027</div>
       </div>
-      <nav className="flex-1 px-2 flex flex-col gap-1">
+      <nav className="flex-1 px-2 flex flex-col gap-1 overflow-y-auto">
         {NAV.map((n) => (
           <Link
             key={n.href}
             href={n.href}
-            className={`text-xs rounded-lg px-3 py-2 transition ${
+            onClick={onNavigate}
+            className={`text-sm md:text-xs rounded-lg px-3 py-2.5 md:py-2 transition ${
               pathname === n.href
                 ? "bg-blue-900/60 text-white"
                 : "text-slate-300 hover:bg-white/5"
@@ -72,6 +73,6 @@ export default function Sidebar() {
       {pushState === "on" && (
         <div className="mx-3 mb-4 text-[10px] text-emerald-500 text-center">🔔 Напоминания включены</div>
       )}
-    </aside>
+    </div>
   );
 }
