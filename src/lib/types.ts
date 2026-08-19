@@ -34,11 +34,4 @@ export type DailyTask = {
   created_at: string;
 };
 
-export type PomodoroSession = {
-  id: string;
-  project_id: string | null;
-  started_at: string;
-  minutes: number;
-};
-
 export const KANBAN_COLUMNS: KanbanColumn[] = ["Бэклог", "В работе", "Готово"];

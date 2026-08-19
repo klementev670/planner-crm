@@ -4,8 +4,8 @@ import Shell from "@/components/Shell";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 export const metadata: Metadata = {
-  title: "Планировщик 2026–2027",
-  description: "Личная CRM: цели, канбан, помодоро, ежедневник",
+    title: "Планировщик — CRM",
+  description: "Личная CRM: цели, канбан,, ежедневник",
   manifest: "/manifest.json",
   icons: { icon: "/icons/icon.svg", apple: "/icons/icon.svg" },
 };

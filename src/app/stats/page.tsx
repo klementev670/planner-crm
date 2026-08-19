@@ -1,7 +1,7 @@
 "use client";
 import { useRealtimeList } from "@/lib/useRealtimeList";
 import { PROJECTS, projectColor } from "@/lib/projects";
-import { Goal, KanbanTask, PomodoroSession } from "@/lib/types";
+import { Goal, KanbanTask } from "@/lib/types";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid,
 } from "recharts";
@@ -9,7 +9,6 @@ import {
 export default function StatsPage() {
   const { items: goals } = useRealtimeList<Goal>("goals", "/api/goals");
   const { items: kanban } = useRealtimeList<KanbanTask>("kanban_tasks", "/api/kanban");
-  const { items: sessions } = useRealtimeList<PomodoroSession>("pomodoro_sessions", "/api/pomodoro");
 
   const goalStats = PROJECTS.map((p) => {
     const pg = goals.filter((g) => g.project_id === p.id);
@@ -21,20 +20,6 @@ export default function StatsPage() {
     value: kanban.filter((t) => t.column_name === col).length,
   }));
 
-  // last 14 days of pomodoro minutes
-  const days: { date: string; minutes: number }[] = [];
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const key = d.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
-    const dayStr = d.toDateString();
-    const minutes = sessions
-      .filter((s) => new Date(s.started_at).toDateString() === dayStr)
-      .reduce((sum, s) => sum + s.minutes, 0);
-    days.push({ date: key, minutes });
-  }
-
-  const totalFocusMinutes = sessions.reduce((s, x) => s + x.minutes, 0);
   const totalGoalsDone = goals.filter((g) => g.done).length;
   const totalKanbanDone = kanban.filter((t) => t.column_name === "Готово").length;
 
@@ -44,11 +29,9 @@ export default function StatsPage() {
     <div>
       <h1 className="text-2xl font-bold mb-4">📊 Статистика</h1>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+    <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 mb-6">
         <StatTile label="Целей выполнено" value={totalGoalsDone} color="#378ADD" />
         <StatTile label="Задач готово (канбан)" value={totalKanbanDone} color="#1D9E75" />
-        <StatTile label="Минут фокуса всего" value={totalFocusMinutes} color="#ff6b6b" />
-        <StatTile label="Сессий помодоро" value={sessions.length} color="#EF9F27" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

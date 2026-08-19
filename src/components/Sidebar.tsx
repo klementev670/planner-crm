@@ -8,9 +8,7 @@ const NAV = [
   { href: "/", label: "🏠 Обзор" },
   { href: "/goals", label: "✅ Цели" },
   { href: "/kanban", label: "📋 Канбан" },
-  { href: "/pomodoro", label: "🍅 Помодоро" },
   { href: "/daily", label: "📅 День" },
-  { href: "/timeline", label: "🗓️ Таймлайн" },
   { href: "/stats", label: "📊 Статистика" },
 ];
 
@@ -41,7 +39,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex flex-col h-full bg-sidebar">
       <div className="px-4 pt-5 pb-4">
         <div className="text-sm font-bold text-blue-400">📋 Планировщик</div>
-        <div className="text-[10px] text-slate-500 mt-1">май 2026 → май 2027</div>
+        <div className="text-[10px] text-slate-500 mt-1">CRM</div>
       </div>
       <nav className="flex-1 px-2 flex flex-col gap-1 overflow-y-auto">
         {NAV.map((n) => (

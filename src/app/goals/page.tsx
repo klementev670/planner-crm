@@ -25,7 +25,7 @@ export default function GoalsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Цели на год</h1>
+      <h1 className="text-2xl font-bold mb-4">Цели</h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {PROJECTS.map((p) => {
           const pgoals = goals.filter((g) => g.project_id === p.id);
