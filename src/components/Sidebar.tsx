@@ -2,20 +2,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { enablePush } from "@/lib/push";
+import { enablePush, disablePush, getPushSubscription } from "@/lib/push";
 
 const NAV = [
   { href: "/", label: "🏠 Обзор" },
   { href: "/goals", label: "✅ Цели" },
   { href: "/kanban", label: "📋 Канбан" },
   { href: "/daily", label: "📅 День" },
+  { href: "/calendar", label: "📆 Календарь" },
   { href: "/stats", label: "📊 Статистика" },
 ];
 
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const [today, setToday] = useState("");
-  const [pushState, setPushState] = useState<"idle" | "on" | "unsupported">("idle");
+  const [pushState, setPushState] = useState<"loading" | "on" | "off" | "unsupported">("loading");
 
   useEffect(() => {
     setToday(
@@ -27,12 +28,20 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     );
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
       setPushState("unsupported");
+      return;
     }
+    getPushSubscription().then((sub) => setPushState(sub ? "on" : "off"));
   }, []);
 
-  async function handleEnablePush() {
-    const ok = await enablePush();
-    if (ok) setPushState("on");
+  async function handleTogglePush() {
+    setPushState("loading");
+    if (pushState === "on") {
+      const ok = await disablePush();
+      setPushState(ok ? "off" : "on");
+    } else {
+      const ok = await enablePush();
+      setPushState(ok ? "on" : "off");
+    }
   }
 
   return (
@@ -60,16 +69,21 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-4 pb-3 text-[10px] text-slate-500 text-center whitespace-pre-line">
         {`Сегодня:\n${today}`}
       </div>
-      {pushState !== "on" && pushState !== "unsupported" && (
+      {pushState !== "unsupported" && (
         <button
-          onClick={handleEnablePush}
-          className="mx-3 mb-4 text-[10px] rounded-lg border border-white/10 py-2 text-slate-400 hover:text-white hover:border-white/30"
+          onClick={handleTogglePush}
+          disabled={pushState === "loading"}
+          title={pushState === "on" ? "Нажмите, чтобы выключить" : "Нажмите, чтобы включить"}
+          className={`mx-3 mb-4 text-[10px] rounded-lg border py-2 transition ${
+            pushState === "on"
+              ? "border-emerald-500/30 text-emerald-500 hover:border-red-400/50 hover:text-red-400"
+              : "border-white/10 text-slate-400 hover:text-white hover:border-white/30"
+          }`}
         >
-          🔔 Включить напоминания
+          {pushState === "loading" && "…"}
+          {pushState === "on" && "🔔 Напоминания включены"}
+          {pushState === "off" && "🔕 Включить напоминания"}
         </button>
-      )}
-      {pushState === "on" && (
-        <div className="mx-3 mb-4 text-[10px] text-emerald-500 text-center">🔔 Напоминания включены</div>
       )}
     </div>
   );

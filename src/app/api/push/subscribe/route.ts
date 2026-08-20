@@ -10,3 +10,11 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(req: NextRequest) {
+  const { endpoint } = await req.json();
+  const db = supabaseAdmin();
+  const { error } = await db.from("push_subscriptions").delete().eq("endpoint", endpoint);
+  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
