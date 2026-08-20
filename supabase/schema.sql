@@ -58,5 +58,20 @@ create table if not exists push_subscriptions (
   created_at timestamptz not null default now()
 );
 
+-- Закупки товара из Китая: партия/лот с расходами и итоговой выручкой,
+-- чтобы считать прибыль и срок реализации по каждой закупке.
+create table if not exists purchase_batches (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  purchase_cost numeric not null default 0,
+  delivery_cost numeric not null default 0,
+  ad_cost numeric not null default 0,
+  sale_revenue numeric not null default 0,
+  purchase_date date not null default current_date,
+  sold_date date,
+  created_at timestamptz not null default now()
+);
+
 -- Enable realtime on the tables we sync live
 alter publication supabase_realtime add table goals, kanban_tasks, daily_tasks, pomodoro_sessions;
+alter publication supabase_realtime add table purchase_batches;

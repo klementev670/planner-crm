@@ -10,6 +10,7 @@ const NAV = [
   { href: "/kanban", label: "📋 Канбан" },
   { href: "/daily", label: "📅 День" },
   { href: "/calendar", label: "📆 Календарь" },
+  { href: "/purchases", label: "📦 Закупки" },
   { href: "/stats", label: "📊 Статистика" },
 ];
 

@@ -35,3 +35,15 @@ export type DailyTask = {
 };
 
 export const KANBAN_COLUMNS: KanbanColumn[] = ["Бэклог", "В работе", "Готово"];
+
+export type PurchaseBatch = {
+  id: string;
+  name: string;
+  purchase_cost: number;
+  delivery_cost: number;
+  ad_cost: number;
+  sale_revenue: number;
+  purchase_date: string; // YYYY-MM-DD
+  sold_date: string | null;
+  created_at: string;
+};
