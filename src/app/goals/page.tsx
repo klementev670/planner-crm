@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRealtimeList } from "@/lib/useRealtimeList";
 import { PROJECTS } from "@/lib/projects";
 import { Goal } from "@/lib/types";
+import { fmtDay } from "@/lib/date";
 
 export default function GoalsPage() {
   const { items: goals, refetch } = useRealtimeList<Goal>("goals", "/api/goals");
@@ -83,7 +84,7 @@ export default function GoalsPage() {
 
 function GoalDialog({ projectId, onClose, onSaved }: { projectId: string; onClose: () => void; onSaved: () => void }) {
   const [text, setText] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(fmtDay(new Date()));
 
   async function save() {
     if (!text.trim()) return;

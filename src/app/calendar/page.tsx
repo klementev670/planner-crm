@@ -2,13 +2,11 @@
 import { useMemo, useState } from "react";
 import { useRealtimeList } from "@/lib/useRealtimeList";
 import { DailyTask, Goal } from "@/lib/types";
+import { fmtDay } from "@/lib/date";
 import DayAgenda from "@/components/DayAgenda";
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
-function fmtDay(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
 function monthStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -26,7 +24,7 @@ export default function CalendarPage() {
 
   const mStr = monthStr(cursor);
   const { items: tasks } = useRealtimeList<DailyTask>("daily_tasks", "/api/daily", `?month=${mStr}`);
-  const { items: goals } = useRealtimeList<Goal>("goals", "/api/goals");
+  const { items: goals, refetch: refetchGoals } = useRealtimeList<Goal>("goals", "/api/goals");
 
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
@@ -38,6 +36,20 @@ export default function CalendarPage() {
     }
     return m;
   }, [tasks, goals, mStr]);
+
+  const selectedGoals = useMemo(
+    () => goals.filter((g) => g.due_date === selected),
+    [goals, selected]
+  );
+
+  async function toggleGoal(g: Goal) {
+    await fetch(`/api/goals/${g.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ done: !g.done }),
+    });
+    refetchGoals();
+  }
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -112,6 +124,19 @@ export default function CalendarPage() {
           weekday: "long",
         })}
       </div>
+
+      {selectedGoals.length > 0 && (
+        <div className="card p-3 mb-4">
+          <div className="text-[11px] font-bold mb-2 text-slate-400">🎯 Дедлайны целей</div>
+          {selectedGoals.map((g) => (
+            <div key={g.id} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 mb-1">
+              <input type="checkbox" checked={g.done} onChange={() => toggleGoal(g)} />
+              <span className={`flex-1 text-xs ${g.done ? "text-slate-500 line-through" : "text-slate-200"}`}>{g.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <DayAgenda day={selected} />
     </div>
   );

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { APP_TZ, todayInTZ } from "@/lib/date";
 import webpush from "web-push";
 
 // Called daily by Vercel Cron. Notifies about goals due today or tomorrow
@@ -17,10 +18,10 @@ export async function GET(req: NextRequest) {
   );
 
   const db = supabaseAdmin();
-  const today = new Date();
-  const in2days = new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000);
-  const todayStr = today.toISOString().slice(0, 10);
-  const in2Str = in2days.toISOString().slice(0, 10);
+  // The server runs in UTC, not the app owner's timezone — pin "today" to
+  // Yekaterinburg so it matches the plain YYYY-MM-DD dates users pick.
+  const todayStr = todayInTZ(APP_TZ);
+  const in2Str = todayInTZ(APP_TZ, 2);
 
   const { data: goals } = await db
     .from("goals")

@@ -1,10 +1,7 @@
 "use client";
 import { useState } from "react";
 import DayAgenda from "@/components/DayAgenda";
-
-function fmtDay(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
+import { fmtDay } from "@/lib/date";
 
 export default function DailyPage() {
   const [day, setDay] = useState(new Date());
