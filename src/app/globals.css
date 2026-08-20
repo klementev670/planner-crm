@@ -12,3 +12,12 @@ html, body {
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
 
 .card { @apply bg-panel border border-white/10 rounded-2xl; }
+
+/* iOS Safari auto-zooms the page on focus when an input's font-size is
+   below 16px — most inputs here use text-xs (12px). Bump it back up on
+   small screens only; desktop sizing is untouched. */
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
