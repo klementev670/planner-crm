@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { APP_TZ, todayInTZ } from "@/lib/date";
-import webpush from "web-push";
+import { initWebPush, sendPushToAll } from "@/lib/notify";
 
 // Called daily by Vercel Cron. Notifies about goals due today or tomorrow
 // (and flags overdue ones) that haven't been notified yet.
@@ -11,11 +11,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
-  webpush.setVapidDetails(
-    "mailto:admin@example.com",
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY as string,
-    process.env.VAPID_PRIVATE_KEY as string
-  );
+  initWebPush();
 
   const db = supabaseAdmin();
   // The server runs in UTC, not the app owner's timezone — pin "today" to
@@ -42,18 +38,7 @@ export async function GET(req: NextRequest) {
         ? `Дедлайн сегодня: «${g.text}»`
         : `Дедлайн скоро: «${g.text}» (${g.due_date})`;
 
-      for (const s of subs) {
-        try {
-          await webpush.sendNotification(
-            s.subscription,
-            JSON.stringify({ title: "⏰ Напоминание о цели", body, url: "/goals" })
-          );
-          sent++;
-        } catch (e) {
-          // subscription likely expired — remove it
-          await db.from("push_subscriptions").delete().eq("id", s.id);
-        }
-      }
+      sent += await sendPushToAll(db, subs, { title: "⏰ Напоминание о цели", body, url: "/goals" });
       await db.from("goals").update({ notified: true }).eq("id", g.id);
     }
   }

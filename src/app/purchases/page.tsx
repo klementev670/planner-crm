@@ -99,16 +99,24 @@ function BatchCard({
   onDelete: () => void;
 }) {
   const [local, setLocal] = useState(batch);
+  const [error, setError] = useState<string | null>(null);
 
   async function patch(fields: Partial<PurchaseBatch>) {
-    const next = { ...local, ...fields };
-    setLocal(next);
-    await fetch(`/api/batches/${batch.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(fields),
-    });
-    onSaved();
+    const prev = local;
+    setLocal({ ...local, ...fields });
+    setError(null);
+    try {
+      const res = await fetch(`/api/batches/${batch.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fields),
+      });
+      if (!res.ok) throw new Error();
+      onSaved();
+    } catch {
+      setLocal(prev);
+      setError("Не сохранилось — проверьте связь и попробуйте ещё раз.");
+    }
   }
 
   const totalCost = local.purchase_cost + local.delivery_cost + local.ad_cost;
@@ -171,6 +179,7 @@ function BatchCard({
           Прибыль: <b style={{ color: profit >= 0 ? "#1D9E75" : "#E24B4A" }}>{money(profit)}</b>
         </span>
       </div>
+      {error && <div className="mt-2 text-[10px] text-red-400">{error}</div>}
     </div>
   );
 }
@@ -205,20 +214,31 @@ function AddBatchDialog({ onClose, onSaved }: { onClose: () => void; onSaved: ()
   const [name, setName] = useState("");
   const [purchaseCost, setPurchaseCost] = useState("");
   const [date, setDate] = useState(fmtDay(new Date()));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function save() {
-    if (!name.trim()) return;
-    await fetch("/api/batches", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        purchase_cost: Number(purchaseCost) || 0,
-        purchase_date: date,
-      }),
-    });
-    onSaved();
-    onClose();
+    if (!name.trim() || saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/batches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          purchase_cost: Number(purchaseCost) || 0,
+          purchase_date: date,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      onSaved();
+      onClose();
+    } catch {
+      setError("Не удалось сохранить — проверьте связь и попробуйте ещё раз.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -251,9 +271,14 @@ function AddBatchDialog({ onClose, onSaved }: { onClose: () => void; onSaved: ()
           onChange={(e) => setDate(e.target.value)}
           className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm mt-1 mb-4 outline-none focus:border-blue-500"
         />
+        {error && <div className="text-[10px] text-red-400 mb-3">{error}</div>}
         <div className="flex gap-2">
-          <button onClick={save} className="flex-1 bg-blue-600 hover:bg-blue-500 rounded-lg py-2 text-sm font-semibold">
-            Добавить
+          <button
+            onClick={save}
+            disabled={saving}
+            className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-lg py-2 text-sm font-semibold"
+          >
+            {saving ? "Сохраняю…" : "Добавить"}
           </button>
           <button onClick={onClose} className="px-4 border border-white/10 rounded-lg text-sm hover:bg-white/10">
             Отмена

@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
   const day = req.nextUrl.searchParams.get("day");
   const month = req.nextUrl.searchParams.get("month"); // YYYY-MM
   const db = supabaseAdmin();
-  let q = db.from("daily_tasks").select("*").order("created_at");
+  let q = db.from("calendar_events").select("*").order("time");
   if (day) q = q.eq("day", day);
   if (month) {
     const [y, m] = month.split("-").map(Number);
@@ -22,8 +22,17 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const db = supabaseAdmin();
   const { data, error } = await db
-    .from("daily_tasks")
-    .insert({ project_id: body.project_id, text: body.text, day: body.day })
+    .from("calendar_events")
+    .insert({
+      project_id: body.project_id || null,
+      day: body.day,
+      time: body.time,
+      text: body.text,
+      remind_day_before: !!body.remind_day_before,
+      remind_hour_before: !!body.remind_hour_before,
+      remind_10min_before: !!body.remind_10min_before,
+      remind_at_start: !!body.remind_at_start,
+    })
     .select()
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

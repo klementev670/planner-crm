@@ -35,6 +35,8 @@ create table if not exists kanban_tasks (
   created_at timestamptz not null default now()
 );
 
+-- Deprecated: replaced by calendar_events below. Left in place (unused by
+-- the app) so no historical data is dropped.
 create table if not exists daily_tasks (
   id uuid primary key default gen_random_uuid(),
   project_id text not null references projects(id) on delete cascade,
@@ -72,6 +74,29 @@ create table if not exists purchase_batches (
   created_at timestamptz not null default now()
 );
 
+-- Задачи/встречи на день с точным временем и точечными напоминаниями
+-- (за день, за час, за 10 минут, в момент начала — независимые тумблеры).
+-- day/time хранятся как wall-clock время в Asia/Yekaterinburg; notified_*
+-- флаги не дают крону слать одно и то же напоминание повторно.
+create table if not exists calendar_events (
+  id uuid primary key default gen_random_uuid(),
+  project_id text references projects(id) on delete set null,
+  day date not null,
+  time text not null, -- 'HH:MM'
+  text text not null,
+  done boolean not null default false,
+  remind_day_before boolean not null default false,
+  remind_hour_before boolean not null default false,
+  remind_10min_before boolean not null default false,
+  remind_at_start boolean not null default false,
+  notified_day_before boolean not null default false,
+  notified_hour_before boolean not null default false,
+  notified_10min_before boolean not null default false,
+  notified_at_start boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
 -- Enable realtime on the tables we sync live
 alter publication supabase_realtime add table goals, kanban_tasks, daily_tasks, pomodoro_sessions;
 alter publication supabase_realtime add table purchase_batches;
+alter publication supabase_realtime add table calendar_events;

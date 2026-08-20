@@ -1,16 +1,64 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Sidebar from "./Sidebar";
+
+const EDGE_ZONE_PX = 24;
+const OPEN_THRESHOLD_PX = 60;
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerOpenRef = useRef(drawerOpen);
+  drawerOpenRef.current = drawerOpen;
 
   // Close the mobile drawer whenever the route changes.
   useEffect(() => {
     setDrawerOpen(false);
   }, [pathname]);
+
+  // A left-edge swipe normally triggers the browser/PWA's native
+  // "go back" gesture. Intercept it as soon as it starts near the edge so
+  // it opens the drawer instead — needs a non-passive touchmove listener
+  // (React's synthetic touch handlers are passive) so preventDefault()
+  // actually suppresses the native swipe.
+  useEffect(() => {
+    let tracking = false;
+    let startX = 0;
+    let startY = 0;
+
+    function onTouchStart(e: TouchEvent) {
+      const t = e.touches[0];
+      tracking = !drawerOpenRef.current && t.clientX <= EDGE_ZONE_PX;
+      startX = t.clientX;
+      startY = t.clientY;
+    }
+    function onTouchMove(e: TouchEvent) {
+      if (!tracking) return;
+      const t = e.touches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        e.preventDefault();
+        if (dx > OPEN_THRESHOLD_PX) {
+          setDrawerOpen(true);
+          tracking = false;
+        }
+      }
+    }
+    function onTouchEnd() {
+      tracking = false;
+    }
+
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    document.addEventListener("touchend", onTouchEnd);
+    return () => {
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
 
   if (pathname?.startsWith("/login")) return <>{children}</>;
 

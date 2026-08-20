@@ -5,6 +5,7 @@
 html, body {
   background: #141414;
   color: #eee;
+  overscroll-behavior-x: none;
 }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }

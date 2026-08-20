@@ -1,9 +1,9 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useRealtimeList } from "@/lib/useRealtimeList";
-import { DailyTask, Goal } from "@/lib/types";
+import { CalendarEvent, Goal } from "@/lib/types";
 import { fmtDay } from "@/lib/date";
-import DayAgenda from "@/components/DayAgenda";
+import DayEvents from "@/components/DayEvents";
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
@@ -23,19 +23,19 @@ export default function CalendarPage() {
   const [selected, setSelected] = useState(todayStr);
 
   const mStr = monthStr(cursor);
-  const { items: tasks } = useRealtimeList<DailyTask>("daily_tasks", "/api/daily", `?month=${mStr}`);
+  const { items: events } = useRealtimeList<CalendarEvent>("calendar_events", "/api/events", `?month=${mStr}`);
   const { items: goals, refetch: refetchGoals } = useRealtimeList<Goal>("goals", "/api/goals");
 
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const t of tasks) m[t.day] = (m[t.day] || 0) + 1;
+    for (const e of events) m[e.day] = (m[e.day] || 0) + 1;
     for (const g of goals) {
       if (g.due_date && !g.done && g.due_date.startsWith(mStr)) {
         m[g.due_date] = (m[g.due_date] || 0) + 1;
       }
     }
     return m;
-  }, [tasks, goals, mStr]);
+  }, [events, goals, mStr]);
 
   const selectedGoals = useMemo(
     () => goals.filter((g) => g.due_date === selected),
@@ -137,7 +137,7 @@ export default function CalendarPage() {
         </div>
       )}
 
-      <DayAgenda day={selected} />
+      <DayEvents day={selected} />
     </div>
   );
 }
