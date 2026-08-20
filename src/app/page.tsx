@@ -4,8 +4,8 @@ import { PROJECTS, projectColor } from "@/lib/projects";
 import { Goal } from "@/lib/types";
 
 const DESCRIPTIONS: Record<string, { emoji: string; desc: string }> = {
-  "ai-model": { emoji: "🤖", desc: "Цель: $2M инвестиций\nдо 31 декабря 2026" },
-  cargo: { emoji: "📦", desc: "Импорт из Китая\nДропшиппинг BMW F30" },
+  "ai-model": { emoji: "🤖", desc: "Цель: $2M инвестиций" },
+  cargo: { emoji: "📦", desc: "Импорт из Китая\nДропшиппинг" },
   courses: { emoji: "📚", desc: "Вайбкодинг на Клоде\nОпора России / ТюмГУ" },
   tyumgu: { emoji: "🎓", desc: "2→3-й курс\nВеб-разработка" },
 };
