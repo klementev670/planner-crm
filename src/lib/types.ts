@@ -27,23 +27,16 @@ export type KanbanTask = {
 
 export const KANBAN_COLUMNS: KanbanColumn[] = ["Бэклог", "В работе", "Готово"];
 
-export type ReminderTier = "day_before" | "hour_before" | "10min_before" | "at_start";
-
 export type CalendarEvent = {
   id: string;
-  project_id: string | null;
   day: string; // YYYY-MM-DD, Asia/Yekaterinburg wall-clock date
   time: string; // HH:MM, Asia/Yekaterinburg wall-clock time
   text: string;
   done: boolean;
   remind_day_before: boolean;
   remind_hour_before: boolean;
-  remind_10min_before: boolean;
-  remind_at_start: boolean;
   notified_day_before: boolean;
   notified_hour_before: boolean;
-  notified_10min_before: boolean;
-  notified_at_start: boolean;
   created_at: string;
 };
 

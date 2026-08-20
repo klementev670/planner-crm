@@ -1,23 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const EDITABLE_FIELDS = [
-  "project_id",
-  "day",
-  "time",
-  "text",
-  "done",
-  "remind_day_before",
-  "remind_hour_before",
-  "remind_10min_before",
-  "remind_at_start",
-];
+const EDITABLE_FIELDS = ["day", "time", "text", "done", "remind_day_before", "remind_hour_before"];
 
 const REMIND_TO_NOTIFIED: Record<string, string> = {
   remind_day_before: "notified_day_before",
   remind_hour_before: "notified_hour_before",
-  remind_10min_before: "notified_10min_before",
-  remind_at_start: "notified_at_start",
 };
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {

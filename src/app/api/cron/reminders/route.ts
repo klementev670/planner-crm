@@ -3,12 +3,12 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { APP_TZ, todayInTZ } from "@/lib/date";
 import { initWebPush, sendPushToAll } from "@/lib/notify";
 
-// Fires calendar_events reminders (день/час/10 минут/момент начала).
-// Not wired into vercel.json — Vercel Cron on the Hobby plan can only run
-// once a day, far too coarse for a "10 minutes before" reminder. Trigger
-// this endpoint every 1-5 minutes from an external scheduler (e.g.
+// Fires calendar_events reminders (за день / за час). Not wired into
+// vercel.json — Vercel Cron on the Hobby plan can only run once a day,
+// too coarse for "an hour before" to land anywhere near on time. Trigger
+// this endpoint every few minutes from an external scheduler (e.g.
 // cron-job.org) with the same Authorization header, or add it to
-// vercel.json with a tight schedule once on a plan that allows it.
+// vercel.json with a tighter schedule once on a plan that allows it.
 //
 // Asia/Yekaterinburg has no DST, so day+time can be converted to a UTC
 // instant with a fixed 5-hour offset.
@@ -21,8 +21,6 @@ function eventInstantMs(day: string, time: string): number {
 const TIERS: { remind: string; notified: string; offsetMin: number; body: (t: string, text: string) => string }[] = [
   { remind: "remind_day_before", notified: "notified_day_before", offsetMin: 24 * 60, body: (t, text) => `Завтра в ${t}: «${text}»` },
   { remind: "remind_hour_before", notified: "notified_hour_before", offsetMin: 60, body: (t, text) => `Через час (${t}): «${text}»` },
-  { remind: "remind_10min_before", notified: "notified_10min_before", offsetMin: 10, body: (t, text) => `Через 10 минут (${t}): «${text}»` },
-  { remind: "remind_at_start", notified: "notified_at_start", offsetMin: 0, body: (_t, text) => `Сейчас: «${text}»` },
 ];
 
 // Reminders more than this late (cron was down, external pinger lagged)

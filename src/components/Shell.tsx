@@ -86,18 +86,25 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <div className="w-8" />
       </div>
 
-      {/* Mobile drawer overlay */}
-      {drawerOpen && (
-        <div className="md:hidden fixed inset-0 z-40 flex">
-          <div
-            className="absolute inset-0 bg-black/60"
-            onClick={() => setDrawerOpen(false)}
-          />
-          <div className="relative w-64 max-w-[80%] h-full shadow-xl">
-            <Sidebar onNavigate={() => setDrawerOpen(false)} />
-          </div>
+      {/* Mobile drawer overlay — always mounted so the slide-in can animate;
+          hidden via opacity/transform + pointer-events when closed. */}
+      <div
+        className={`md:hidden fixed inset-0 z-40 flex transition-opacity duration-200 ${
+          drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <div
+          className="absolute inset-0 bg-black/60"
+          onClick={() => setDrawerOpen(false)}
+        />
+        <div
+          className={`relative w-64 max-w-[80%] h-full shadow-xl transition-transform duration-200 ease-out ${
+            drawerOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <Sidebar onNavigate={() => setDrawerOpen(false)} />
         </div>
-      )}
+      </div>
 
       <main className="flex-1 p-4 pt-16 md:p-6 md:pt-6 overflow-x-hidden w-full min-w-0">
         {children}

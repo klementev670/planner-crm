@@ -111,11 +111,14 @@ function BatchCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(fields),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || `Ошибка сервера (${res.status})`);
+      }
       onSaved();
-    } catch {
+    } catch (e: any) {
       setLocal(prev);
-      setError("Не сохранилось — проверьте связь и попробуйте ещё раз.");
+      setError(e.message || "Не сохранилось, попробуйте ещё раз.");
     }
   }
 
@@ -231,11 +234,14 @@ function AddBatchDialog({ onClose, onSaved }: { onClose: () => void; onSaved: ()
           purchase_date: date,
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error || `Ошибка сервера (${res.status})`);
+      }
       onSaved();
       onClose();
-    } catch {
-      setError("Не удалось сохранить — проверьте связь и попробуйте ещё раз.");
+    } catch (e: any) {
+      setError(e.message || "Не удалось сохранить, попробуйте ещё раз.");
     } finally {
       setSaving(false);
     }
