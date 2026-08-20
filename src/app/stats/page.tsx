@@ -1,7 +1,7 @@
 "use client";
 import { useRealtimeList } from "@/lib/useRealtimeList";
 import { PROJECTS, projectColor } from "@/lib/projects";
-import { Goal, KanbanTask, PurchaseBatch } from "@/lib/types";
+import { Goal, KanbanTask, PurchaseBatch, FinanceTransaction } from "@/lib/types";
 import {
 BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid,
 } from "recharts";
@@ -14,6 +14,7 @@ export default function StatsPage() {
 const { items: goals } = useRealtimeList<Goal>("goals", "/api/goals");
 const { items: kanban } = useRealtimeList<KanbanTask>("kanban_tasks", "/api/kanban");
 const { items: batches } = useRealtimeList<PurchaseBatch>("purchase_batches", "/api/batches");
+const { items: finance } = useRealtimeList<FinanceTransaction>("finance_transactions", "/api/finance");
 
 const goalStats = PROJECTS.map((p) => {
 const pg = goals.filter((g) => g.project_id === p.id);
@@ -42,6 +43,16 @@ const batchChart = batches
     Расходы: b.purchase_cost + b.delivery_cost + b.ad_cost,
     Выручка: b.sale_revenue,
   }));
+
+const financeIncome = finance.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+const financeExpense = finance.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+const financeBalance = financeIncome - financeExpense;
+const financeByCategory: Record<string, number> = {};
+for (const t of finance) if (t.type === "expense") financeByCategory[t.category] = (financeByCategory[t.category] || 0) + t.amount;
+const financeChart = Object.entries(financeByCategory)
+  .map(([name, value]) => ({ name, value }))
+  .sort((a, b) => b.value - a.value);
+const FINANCE_PIE_COLORS = ["#378ADD", "#1D9E75", "#EF9F27", "#7F77DD", "#E24B4A", "#888888", "#4FC3E0", "#C77DFF"];
 
 return (
 <div>
@@ -97,6 +108,26 @@ return (
 <Bar dataKey="Расходы" fill="#EF9F27" radius={[4, 4, 0, 0]} />
 <Bar dataKey="Выручка" fill="#378ADD" radius={[4, 4, 0, 0]} />
 </BarChart>
+</ResponsiveContainer>
+</div>
+)}
+
+<h2 className="text-lg font-bold mb-3 mt-6">💰 Финансы (всё время)</h2>
+<div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+<StatTileText label="Доходы" value={money(financeIncome)} color="#1D9E75" />
+<StatTileText label="Расходы" value={money(financeExpense)} color="#E24B4A" />
+<StatTileText label="Баланс" value={money(financeBalance)} color={financeBalance >= 0 ? "#378ADD" : "#E24B4A"} />
+</div>
+{financeChart.length > 0 && (
+<div className="card p-4">
+<div className="text-sm font-bold mb-3">Расходы по категориям</div>
+<ResponsiveContainer width="100%" height={240}>
+<PieChart>
+<Pie data={financeChart} dataKey="value" nameKey="name" outerRadius={80} label>
+{financeChart.map((_, i) => <Cell key={i} fill={FINANCE_PIE_COLORS[i % FINANCE_PIE_COLORS.length]} />)}
+</Pie>
+<Tooltip contentStyle={{ background: "#1c1c1c", border: "1px solid #333" }} formatter={(v: number) => money(v)} />
+</PieChart>
 </ResponsiveContainer>
 </div>
 )}

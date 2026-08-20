@@ -92,7 +92,21 @@ create table if not exists calendar_events (
   created_at timestamptz not null default now()
 );
 
+-- Личные финансы: разовые операции дохода/расхода по категориям,
+-- отдельно от закупок из Китая (те про себестоимость товара, эти — про
+-- личный бюджет в целом).
+create table if not exists finance_transactions (
+  id uuid primary key default gen_random_uuid(),
+  type text not null check (type in ('income', 'expense')),
+  amount numeric not null,
+  category text not null,
+  note text,
+  date date not null default current_date,
+  created_at timestamptz not null default now()
+);
+
 -- Enable realtime on the tables we sync live
 alter publication supabase_realtime add table goals, kanban_tasks, daily_tasks, pomodoro_sessions;
 alter publication supabase_realtime add table purchase_batches;
 alter publication supabase_realtime add table calendar_events;
+alter publication supabase_realtime add table finance_transactions;

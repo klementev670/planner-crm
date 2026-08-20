@@ -51,3 +51,15 @@ export type PurchaseBatch = {
   sold_date: string | null;
   created_at: string;
 };
+
+export type FinanceType = "income" | "expense";
+
+export type FinanceTransaction = {
+  id: string;
+  type: FinanceType;
+  amount: number;
+  category: string;
+  note: string | null;
+  date: string; // YYYY-MM-DD
+  created_at: string;
+};
