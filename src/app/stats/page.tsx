@@ -1,7 +1,8 @@
 "use client";
 import { useRealtimeList } from "@/lib/useRealtimeList";
 import { PROJECTS, projectColor } from "@/lib/projects";
-import { Goal, KanbanTask, PurchaseBatch, FinanceTransaction } from "@/lib/types";
+import { Goal, KanbanTask, PurchaseBatch, FinanceTransaction, CalendarEvent } from "@/lib/types";
+import { fmtDay } from "@/lib/date";
 import {
 BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid,
 } from "recharts";
@@ -15,6 +16,7 @@ const { items: goals } = useRealtimeList<Goal>("goals", "/api/goals");
 const { items: kanban } = useRealtimeList<KanbanTask>("kanban_tasks", "/api/kanban");
 const { items: batches } = useRealtimeList<PurchaseBatch>("purchase_batches", "/api/batches");
 const { items: finance } = useRealtimeList<FinanceTransaction>("finance_transactions", "/api/finance");
+const { items: events } = useRealtimeList<CalendarEvent>("calendar_events", "/api/events");
 
 const goalStats = PROJECTS.map((p) => {
 const pg = goals.filter((g) => g.project_id === p.id);
@@ -28,6 +30,9 @@ value: kanban.filter((t) => t.column_name === col).length,
 
 const totalGoalsDone = goals.filter((g) => g.done).length;
 const totalKanbanDone = kanban.filter((t) => t.column_name === "Готово").length;
+const todayStr = fmtDay(new Date());
+const overdueGoals = goals.filter((g) => !g.done && g.due_date && g.due_date < todayStr).length;
+const goalsCompletionPct = goals.length ? Math.round((totalGoalsDone / goals.length) * 100) : 0;
 
 const PIE_COLORS = ["#888888", "#378ADD", "#1D9E75"];
 
@@ -44,6 +49,18 @@ const batchChart = batches
     Выручка: b.sale_revenue,
   }));
 
+const soldBatches = batches.filter((b) => b.sold_date).length;
+const inProgressBatches = batches.length - soldBatches;
+const batchesWithRevenue = batches.filter((b) => b.sale_revenue > 0);
+const avgMarginPct = batchesWithRevenue.length
+  ? Math.round(
+      batchesWithRevenue.reduce((s, b) => {
+        const cost = b.purchase_cost + b.delivery_cost + b.ad_cost;
+        return s + ((b.sale_revenue - cost) / b.sale_revenue) * 100;
+      }, 0) / batchesWithRevenue.length
+    )
+  : null;
+
 const financeIncome = finance.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
 const financeExpense = finance.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
 const financeBalance = financeIncome - financeExpense;
@@ -54,11 +71,27 @@ const financeChart = Object.entries(financeByCategory)
   .sort((a, b) => b.value - a.value);
 const FINANCE_PIE_COLORS = ["#378ADD", "#1D9E75", "#EF9F27", "#7F77DD", "#E24B4A", "#888888", "#4FC3E0", "#C77DFF"];
 
+const now = new Date();
+const financeTrend = Array.from({ length: 6 }, (_, i) => {
+  const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+  const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const monthTx = finance.filter((t) => t.date.startsWith(m));
+  return {
+    name: d.toLocaleDateString("ru-RU", { month: "short" }),
+    Доходы: monthTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0),
+    Расходы: monthTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0),
+  };
+});
+
+const eventsDone = events.filter((e) => e.done).length;
+
 return (
 <div>
 <h1 className="text-2xl font-bold mb-4">📊 Статистика</h1>
-<div className="grid grid-cols-2 sm:grid-cols-2 gap-3 mb-6">
+<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
 <StatTile label="Целей выполнено" value={totalGoalsDone} color="#378ADD" />
+<StatTileText label="% выполнения целей" value={`${goalsCompletionPct}%`} color="#7F77DD" />
+<StatTile label="Просрочено целей" value={overdueGoals} color={overdueGoals > 0 ? "#E24B4A" : "#1D9E75"} />
 <StatTile label="Задач готово (канбан)" value={totalKanbanDone} color="#1D9E75" />
 </div>
 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
@@ -95,6 +128,9 @@ return (
 <StatTileText label="Потрачено всего" value={money(batchSpent)} color="#EF9F27" />
 <StatTileText label="Выручка" value={money(batchRevenue)} color="#378ADD" />
 <StatTileText label="Прибыль" value={money(batchProfit)} color={batchProfit >= 0 ? "#1D9E75" : "#E24B4A"} />
+<StatTile label="Продано" value={soldBatches} color="#1D9E75" />
+<StatTile label="В работе" value={inProgressBatches} color="#EF9F27" />
+<StatTileText label="Средняя маржа" value={avgMarginPct === null ? "—" : `${avgMarginPct}%`} color="#7F77DD" />
 </div>
 {batchChart.length > 0 && (
 <div className="card p-4">
@@ -131,6 +167,26 @@ return (
 </ResponsiveContainer>
 </div>
 )}
+<div className="card p-4 mt-4">
+<div className="text-sm font-bold mb-3">Доходы и расходы по месяцам</div>
+<ResponsiveContainer width="100%" height={220}>
+<BarChart data={financeTrend}>
+<CartesianGrid strokeDasharray="3 3" stroke="#333" />
+<XAxis dataKey="name" stroke="#888" fontSize={10} />
+<YAxis stroke="#888" fontSize={10} />
+<Tooltip contentStyle={{ background: "#1c1c1c", border: "1px solid #333" }} formatter={(v: number) => money(v)} />
+<Bar dataKey="Доходы" fill="#1D9E75" radius={[4, 4, 0, 0]} />
+<Bar dataKey="Расходы" fill="#E24B4A" radius={[4, 4, 0, 0]} />
+</BarChart>
+</ResponsiveContainer>
+</div>
+
+<h2 className="text-lg font-bold mb-3 mt-6">📆 Календарь</h2>
+<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+<StatTile label="Событий всего" value={events.length} color="#378ADD" />
+<StatTile label="Выполнено" value={eventsDone} color="#1D9E75" />
+<StatTile label="Не выполнено" value={events.length - eventsDone} color="#EF9F27" />
+</div>
 </div>
 );
 }
