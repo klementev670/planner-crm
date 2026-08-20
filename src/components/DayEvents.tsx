@@ -24,7 +24,7 @@ async function withErrorHandling(req: () => Promise<Response>, setError: (e: str
 }
 
 export default function DayEvents({ day }: { day: string }) {
-  const { items: events, refetch } = useRealtimeList<CalendarEvent>("calendar_events", "/api/events", `?day=${day}`);
+  const { items: events, refetch, mutate } = useRealtimeList<CalendarEvent>("calendar_events", "/api/events", `?day=${day}`);
   const [time, setTime] = useState("12:00");
   const [text, setText] = useState("");
   const [reminders, setReminders] = useState<Record<string, boolean>>({
@@ -53,6 +53,9 @@ export default function DayEvents({ day }: { day: string }) {
     }
   }
   async function patch(ev: CalendarEvent, fields: Partial<CalendarEvent>) {
+    const prev: Partial<CalendarEvent> = {};
+    for (const k of Object.keys(fields) as (keyof CalendarEvent)[]) (prev as any)[k] = ev[k];
+    mutate((items) => items.map((i) => (i.id === ev.id ? { ...i, ...fields } : i)));
     const ok = await withErrorHandling(
       () =>
         fetch(`/api/events/${ev.id}`, {
@@ -62,11 +65,13 @@ export default function DayEvents({ day }: { day: string }) {
         }),
       setError
     );
-    if (ok) refetch();
+    if (!ok) mutate((items) => items.map((i) => (i.id === ev.id ? { ...i, ...prev } : i)));
   }
   async function del(id: string) {
+    const snapshot = events;
+    mutate((items) => items.filter((i) => i.id !== id));
     const ok = await withErrorHandling(() => fetch(`/api/events/${id}`, { method: "DELETE" }), setError);
-    if (ok) refetch();
+    if (!ok) mutate(() => snapshot);
   }
 
   const doneCount = events.filter((e) => e.done).length;

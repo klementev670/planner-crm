@@ -3,7 +3,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Sidebar from "./Sidebar";
 
-const EDGE_ZONE_PX = 24;
+const EDGE_ZONE_FRACTION = 0.2; // swipe can start anywhere in the left 20% of the screen
 const OPEN_THRESHOLD_PX = 60;
 
 export default function Shell({ children }: { children: React.ReactNode }) {
@@ -29,7 +29,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
     function onTouchStart(e: TouchEvent) {
       const t = e.touches[0];
-      tracking = !drawerOpenRef.current && t.clientX <= EDGE_ZONE_PX;
+      tracking = !drawerOpenRef.current && t.clientX <= window.innerWidth * EDGE_ZONE_FRACTION;
       startX = t.clientX;
       startY = t.clientY;
     }

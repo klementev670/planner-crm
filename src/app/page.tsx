@@ -12,9 +12,9 @@ const DESCRIPTIONS: Record<string, { emoji: string; desc: string }> = {
 };
 
 export default function OverviewPage() {
-  const { items: goals, loading, refetch: refetchGoals } = useRealtimeList<Goal>("goals", "/api/goals");
+  const { items: goals, loading, mutate: mutateGoals } = useRealtimeList<Goal>("goals", "/api/goals");
   const todayStr = fmtDay(new Date());
-  const { items: todayEvents, refetch: refetchEvents } = useRealtimeList<CalendarEvent>(
+  const { items: todayEvents, mutate: mutateEvents } = useRealtimeList<CalendarEvent>(
     "calendar_events",
     "/api/events",
     `?day=${todayStr}`
@@ -37,20 +37,22 @@ export default function OverviewPage() {
     .sort((a, b) => (a.due_date as string).localeCompare(b.due_date as string));
 
   async function toggleEvent(ev: CalendarEvent) {
-    await fetch(`/api/events/${ev.id}`, {
+    mutateEvents((items) => items.map((i) => (i.id === ev.id ? { ...i, done: !ev.done } : i)));
+    const res = await fetch(`/api/events/${ev.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ done: !ev.done }),
     });
-    refetchEvents();
+    if (!res.ok) mutateEvents((items) => items.map((i) => (i.id === ev.id ? { ...i, done: ev.done } : i)));
   }
   async function toggleGoal(g: Goal) {
-    await fetch(`/api/goals/${g.id}`, {
+    mutateGoals((items) => items.map((i) => (i.id === g.id ? { ...i, done: !g.done } : i)));
+    const res = await fetch(`/api/goals/${g.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ done: !g.done }),
     });
-    refetchGoals();
+    if (!res.ok) mutateGoals((items) => items.map((i) => (i.id === g.id ? { ...i, done: g.done } : i)));
   }
 
   const hasToday = todayEvents.length > 0 || todayGoals.length > 0;

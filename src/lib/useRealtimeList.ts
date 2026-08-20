@@ -28,5 +28,13 @@ export function useRealtimeList<T>(table: string, apiPath: string, extraQuery = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table, apiPath, extraQuery]);
 
-  return { items, loading, refetch };
+  // Apply a local change immediately (checkbox ticks, item removed) instead
+  // of waiting on a full request+refetch round-trip before anything on
+  // screen moves. Callers should revert this (or just call refetch()) if
+  // the underlying request fails.
+  const mutate = useCallback((updater: (items: T[]) => T[]) => {
+    setItems(updater);
+  }, []);
+
+  return { items, loading, refetch, mutate };
 }

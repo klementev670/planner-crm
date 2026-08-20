@@ -12,7 +12,7 @@ function daysBetween(a: string, b: string) {
 }
 
 export default function PurchasesPage() {
-  const { items: batches, refetch } = useRealtimeList<PurchaseBatch>("purchase_batches", "/api/batches");
+  const { items: batches, refetch, mutate } = useRealtimeList<PurchaseBatch>("purchase_batches", "/api/batches");
   const [showAdd, setShowAdd] = useState(false);
 
   const totals = useMemo(() => {
@@ -36,8 +36,10 @@ export default function PurchasesPage() {
   }, [batches]);
 
   async function del(id: string) {
-    await fetch(`/api/batches/${id}`, { method: "DELETE" });
-    refetch();
+    const snapshot = batches;
+    mutate((items) => items.filter((i) => i.id !== id));
+    const res = await fetch(`/api/batches/${id}`, { method: "DELETE" });
+    if (!res.ok) mutate(() => snapshot);
   }
 
   return (

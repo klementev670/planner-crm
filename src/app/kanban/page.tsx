@@ -7,7 +7,7 @@ import { KANBAN_COLUMNS, KanbanColumn, KanbanTask } from "@/lib/types";
 const COL_COLOR: Record<string, string> = { "Бэклог": "#888", "В работе": "#378ADD", "Готово": "#1D9E75" };
 
 export default function KanbanPage() {
-  const { items: tasks, refetch } = useRealtimeList<KanbanTask>("kanban_tasks", "/api/kanban");
+  const { items: tasks, refetch, mutate } = useRealtimeList<KanbanTask>("kanban_tasks", "/api/kanban");
   const [text, setText] = useState("");
   const [proj, setProj] = useState(PROJECTS[0].id);
 
@@ -22,16 +22,20 @@ export default function KanbanPage() {
     refetch();
   }
   async function move(id: string, column_name: KanbanColumn) {
-    await fetch(`/api/kanban/${id}`, {
+    const prevCol = tasks.find((t) => t.id === id)?.column_name;
+    mutate((items) => items.map((i) => (i.id === id ? { ...i, column_name } : i)));
+    const res = await fetch(`/api/kanban/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ column_name }),
     });
-    refetch();
+    if (!res.ok && prevCol) mutate((items) => items.map((i) => (i.id === id ? { ...i, column_name: prevCol } : i)));
   }
   async function del(id: string) {
-    await fetch(`/api/kanban/${id}`, { method: "DELETE" });
-    refetch();
+    const snapshot = tasks;
+    mutate((items) => items.filter((i) => i.id !== id));
+    const res = await fetch(`/api/kanban/${id}`, { method: "DELETE" });
+    if (!res.ok) mutate(() => snapshot);
   }
 
   return (

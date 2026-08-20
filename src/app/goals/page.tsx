@@ -6,20 +6,23 @@ import { Goal } from "@/lib/types";
 import { fmtDay } from "@/lib/date";
 
 export default function GoalsPage() {
-  const { items: goals, refetch } = useRealtimeList<Goal>("goals", "/api/goals");
+  const { items: goals, refetch, mutate } = useRealtimeList<Goal>("goals", "/api/goals");
   const [dialogProject, setDialogProject] = useState<string | null>(null);
 
   async function toggle(g: Goal) {
-    await fetch(`/api/goals/${g.id}`, {
+    mutate((items) => items.map((i) => (i.id === g.id ? { ...i, done: !g.done } : i)));
+    const res = await fetch(`/api/goals/${g.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ done: !g.done }),
     });
-    refetch();
+    if (!res.ok) mutate((items) => items.map((i) => (i.id === g.id ? { ...i, done: g.done } : i)));
   }
   async function del(id: string) {
-    await fetch(`/api/goals/${id}`, { method: "DELETE" });
-    refetch();
+    const snapshot = goals;
+    mutate((items) => items.filter((i) => i.id !== id));
+    const res = await fetch(`/api/goals/${id}`, { method: "DELETE" });
+    if (!res.ok) mutate(() => snapshot);
   }
 
   const today = new Date();

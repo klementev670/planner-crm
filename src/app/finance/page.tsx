@@ -18,7 +18,7 @@ const PIE_COLORS = ["#378ADD", "#1D9E75", "#EF9F27", "#7F77DD", "#E24B4A", "#888
 export default function FinancePage() {
   const [cursor, setCursor] = useState(new Date());
   const mStr = monthStr(cursor);
-  const { items: txs, refetch } = useRealtimeList<FinanceTransaction>("finance_transactions", "/api/finance", `?month=${mStr}`);
+  const { items: txs, refetch, mutate } = useRealtimeList<FinanceTransaction>("finance_transactions", "/api/finance", `?month=${mStr}`);
 
   const [type, setType] = useState<FinanceType>("expense");
   const [amount, setAmount] = useState("");
@@ -58,8 +58,10 @@ export default function FinancePage() {
   }
 
   async function del(id: string) {
-    await fetch(`/api/finance/${id}`, { method: "DELETE" });
-    refetch();
+    const snapshot = txs;
+    mutate((items) => items.filter((i) => i.id !== id));
+    const res = await fetch(`/api/finance/${id}`, { method: "DELETE" });
+    if (!res.ok) mutate(() => snapshot);
   }
 
   const totals = useMemo(() => {
